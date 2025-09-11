@@ -1,15 +1,13 @@
-
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <fcntl.h>
+#include <unistd.h> //read, write, close
+#include <stdio.h>  //printf, perror, fprintf
+#include <stdlib.h> //malloc / free / calloc / realloc
+#include <fcntl.h>  //open, O_RDONLY
 
 #ifndef BUFFER_SIZE
 # define BUFFER_SIZE 100
 #endif
 
-size_t	ft_strlen(char *s)
+size_t	ft_strlen(const char *s)
 {
 	size_t	i;
 
@@ -19,7 +17,7 @@ size_t	ft_strlen(char *s)
 	return (i);
 }
 
-char	*ft_strchr(const char *s, int c)
+char	*ft_strchr(const char *s, int c)        //返回指针，指向字符
 {
 	while(*s)
 	{
@@ -27,36 +25,36 @@ char	*ft_strchr(const char *s, int c)
 			return ((char *)s);					//返回指针，指向字符,返回此字符直至\0
 		s++;									//修正*s++ ---> 为s++
 	}
-	if ((char)c == '\0')
+	if ((char)c == '\0')						//*s已经到底了\0
 		return ((char *)s);
 	return (NULL);
 }
 
-void	*ft_memcpy(void *dest, const void *src, size_t n)
+void	*ft_memcpy(void *dst, const void *src, size_t n)
 {
 	size_t	i;
 
-	if(!dest && !src)
+	if(!dst && !src)
 		return (NULL);
 	i = 0;
 	while(i < n)
 	{
-		((unsigned char *)dest)[i] = ((const unsigned char *)src)[i]; //unsigned把内存当“原始字节(0..255)”来处理
+		((unsigned char *)dst)[i] = ((const unsigned char *)src)[i];  //unsigned把内存当“原始字节(0..255)”来处理
 		i++;														  //在比较/运算/打印等场景比char更可靠
 	}
-	return (dest);
+	return (dst);
 }
 
-void	*ft_memmove(void *dest, const void *src, size_t n)
+void	*ft_memmove(void *dst, const void *src, size_t n)
 {
 	unsigned char 		*d;
 	const unsigned char	*s;
 
-	if(!dest && !src)
+	if(!dst && !src)
 		return (NULL);
-	if (dest == src || n == 0)
-        return (dest);
-	d = (unsigned char *)dest;		//比较 dest > src 前也应把它们转为同一类型的字节指针再比
+	if (dst == src || n == 0)
+        return (dst);
+	d = (unsigned char *)dst;		//比较 dest > src 前也应把它们转为同一类型的字节指针再比
 	s = (const unsigned char *)src;
 	if(d > s)					// 可能重叠且目标在后：从尾到头拷贝，避免覆盖未拷贝的数据
 	{
@@ -66,13 +64,13 @@ void	*ft_memmove(void *dest, const void *src, size_t n)
 	else						// 不重叠或目标在前：从头到尾拷贝
 	{
 		while(n--)
-			*d++ = *s++;
+			*d++ = *s++;        //char赋值(char)*d，然后指针移动去下一个d++
 	}
-	return (dest);
+	return (dst);
 }
 
 /*给*s1重新分配一块更大的内存，把旧内容拷过去，再把 s2 的内容接在后面*/
-int	str_append_mem(char **s1, char *s2, size_t size2)   //成功返回1 失败返回0； char**字符串指针，用于修改字符串
+int	str_append_mem(char **s1, const char *s2, size_t size2)   //成功返回1 失败返回0； char**字符串指针，用于修改字符串
 {
 	char 	*tmp;										
 	size_t	size1;										//size2 -> s2的长度（要追加的字节数）
@@ -123,7 +121,7 @@ char	*get_next_line(int fd)
 				free(rt);
 				return (NULL);
 			}
-			ft_memmove(buf, buf + take, ft_strlen((buf + take) + 1)); //take后面的内容往前移动变成新的字符串
+			ft_memmove(buf, buf + take, ft_strlen(buf + take) + 1); //take后面的内容(剩余串+结尾'\0')往前移动变成新的字符串
 			return (rt);
 		}
 		if (buf[0] != '\0')					//没有找到\n，且buf还有内容
@@ -147,11 +145,30 @@ char	*get_next_line(int fd)
 		{
 			if (rt != NULL && *rt != '\0') //rt被分配过内容，且rt第一个字符有内容
 			{
-				b[0] = '\0';
+				buf[0] = '\0';
 				return (rt);
 			}
 			return (NULL);
 		}
-		buf[r] = '\0';
+		buf[r] = '\0';			//回到循环顶部，重新查找'\n'
 	}
+}
+
+int main(int argc, char **argv)
+{
+	int fd;
+	char *line;
+	
+	if (argc == 2)
+		fd = open(argv[1], O_RDONLY);           //0 → 标准输入 (stdin) 1 → 标准输出 (stdout) 2 → 标准错误 (stderr) -1 error
+	if (fd < 0)
+		return 1;
+
+	while ((line = get_next_line(fd)) != NULL) {
+		printf("%s", line);
+		free(line);
+	}
+
+	close(fd);
+	return 0;
 }
