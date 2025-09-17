@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void    print(int *board, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        fprintf(stdout, "%d", board[i]);
+        if (i < n - 1)
+            fprintf(stdout, " ");
+        else
+            fprintf(stdout, "\n");
+    }
+}
+
+int check(int *board, int col, int row)
+{
+    for (int i = 0; i < col; i++)
+    {
+        if(board[i] == row || board[i] - row == col - i || row - board[i] == col - i)
+            return 1;
+    }
+    return 0;
+}
+
+void    solve(int *board, int col, int n)
+{
+    if (col == n)
+    {
+        print(board, n);
+        return ;
+    }
+    for(int row = 0; row < n; row++)
+    {
+        if (check(board, col, row) == 0)
+        {
+            board[col] = row;
+            solve(board, col + 1, n);
+        }
+    }
+}
+
+int main (int ac, char **av)
+{
+    int n = atoi(av[1]);
+    int *board = malloc(sizeof(int) * n);
+
+    solve(board, 0, n);
+    free(board);
+}
